@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Manager</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  h1 {
+    margin-bottom: 20px;
+  }
+  form {
+    margin-bottom: 20px;
+  }
+  input, textarea, select, button {
+    margin-bottom: 10px;
+  }
+  button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  th {
+    background-color: #4CAF50;
+    color: white;
+  }
+  tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+</style>
+</head>
+<body>
+
+<h1>Task Manager</h1>
+
+<form id="taskForm">
+  <input type="text" name="title" id="title" placeholder="Title" required><br>
+  <textarea id="description" name="description" placeholder="Description" required></textarea><br>
+  <select id="priority" name="priority" required>
+    <option value="">Select Priority</option>
+    <option value="Low">Low</option>
+    <option value="Medium">Medium</option>
+    <option value="High">High</option>
+  </select><br>
+  <input type="date" id="dueDate" name="dueDate" required><br>
+  <button type="submit">Add Task</button>
+</form>
+
+<table id="taskTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Title</th>
+      <th>Description</th>
+      <th>Priority</th>
+      <th>Due Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Tasks will be dynamically added here -->
+  </tbody>
+</table>
+
+<script>
+  const taskForm = document.getElementById('taskForm');
+  const taskTable = document.getElementById('taskTable').getElementsByTagName('tbody')[0];
+
+  // Function to fetch tasks from server and render them
+  function fetchAndRenderTasks() {
+    fetch('api/tasks')
+      .then(response => response.json())
+      .then(tasks => {
+        taskTable.innerHTML = '';
+        tasks.forEach(task => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${task.id}</td>
+            <td>${task.title}</td>
+            <td>${task.description}</td>
+            <td>${task.priority}</td>
+            <td>${task.due_date}</td>
+            <td>
+              <button onclick="editTask(${task.id})">Edit</button>
+              <button onclick="deleteTask(${task.id})">Delete</button>
+            </td>
+          `;
+          taskTable.appendChild(row);
+        });
+      })
+      .catch(error => console.error('Error fetching tasks:', error));
+  }
+
+  // Function to add a new task
+  function addTask(event) {
+    event.preventDefault();
+    const formData = new FormData(taskForm);
+    console.log(formData)
+    const taskData = {
+      title: formData.get('title'),
+      description: formData.get('description'),
+      priority: formData.get('priority'),
+      due_date: formData.get('dueDate')
+    };
+    console.log(taskData);
+
+    fetch('api/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(taskData)
+    })
+      .then(response => response.json())
+      .then(task => {
+        taskForm.reset();
+        fetchAndRenderTasks();
+      })
+      .catch(error => console.error('Error adding task:', error));
+  }
+
+  // Function to delete a task
+  function deleteTask(taskId) {
+    fetch(`/api/tasks/${taskId}`, {
+      method: 'DELETE'
+    })
+      .then(() => {
+        fetchAndRenderTasks();
+      })
+      .catch(error => console.error('Error deleting task:', error));
+  }
+
+  // Function to edit a task
+  function editTask(taskId) {
+    console.log('Edit task with ID:', taskId);
+    // Implement editing functionality as needed
+  }
+
+  // Event listener for form submission
+  taskForm.addEventListener('submit', addTask);
+
+  // Initial fetch and render tasks
+  fetchAndRenderTasks();
+</script>
+
+</body>
+</html>
